@@ -55,11 +55,13 @@ app.MapPost("/cats", async ([FromQuery] string name, MyDbContext dbContext) =>
     .WithOpenApi();
 
 
-app.Run();
 
 using var scope = app.Services.CreateScope();
 var context = scope.ServiceProvider.GetRequiredService<MyDbContext>();
+var migrations = await context.Database.GetPendingMigrationsAsync();
 await context.Database.MigrateAsync();
+
+app.Run();
 
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
