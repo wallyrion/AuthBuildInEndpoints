@@ -40,6 +40,7 @@ app.MapIdentityApi<AppUser>();
 
 app.MapGet("/health", () => Results.Ok(new
 {
+    Version = "1.2",
     DeployedOn = deployingDate,
     ImageTag = builder.Configuration["CurrentImageTag"],
 }));
