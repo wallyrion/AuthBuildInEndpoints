@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
@@ -11,13 +12,17 @@ var deployingDate = DateTime.UtcNow;
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddOptions<BearerTokenOptions>(IdentityConstants.BearerScheme)
+    .Configure(options => { options.BearerTokenExpiration = TimeSpan.FromDays(7); });
+
+
 builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<AppUser>()
     .AddEntityFrameworkStores<MyDbContext>();
 
 builder.Services.AddDbContext<MyDbContext>(c =>
 {
-    c.UseSqlite("Data Source=MyDatabase.db");
+    c.UseNpgsql(builder.Configuration.GetConnectionString("postgresdb"));
 });
 
 var app = builder.Build();
