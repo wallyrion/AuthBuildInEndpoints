@@ -41,6 +41,7 @@ app.MapIdentityApi<AppUser>();
 app.MapGet("/health", () => Results.Ok(new
 {
     DeployedOn = deployingDate,
+    ImageTag = builder.Configuration["CurrentImageTag"],
 }));
 
 app.MapGet("/cats", (MyDbContext dbContext) =>
