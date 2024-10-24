@@ -1,12 +1,19 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var deployingDate = DateTime.UtcNow;
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddAuthorization();
+builder.Services.AddIdentityApiEndpoints<AppUser>()
+    .AddEntityFrameworkStores<MyDbContext>();
 
 builder.Services.AddDbContext<MyDbContext>(c =>
 {
@@ -16,18 +23,20 @@ builder.Services.AddDbContext<MyDbContext>(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
-var summaries = new[]
+app.MapIdentityApi<AppUser>();
+
+app.MapGet("/health", () => Results.Ok(new
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    DeployedOn = deployingDate,
+}));
 
 app.MapGet("/cats", (MyDbContext dbContext) =>
     {
@@ -51,6 +60,7 @@ app.MapPost("/cats", async ([FromQuery] string name, MyDbContext dbContext) =>
 
         return cat;
     })
+    .RequireAuthorization()
     .WithName("AddCat")
     .WithOpenApi();
 
@@ -75,8 +85,13 @@ public class Cat
     public required string Name { get; init; }
 }
 
-public class MyDbContext(DbContextOptions<MyDbContext> options) : DbContext(options)
+public class MyDbContext(DbContextOptions<MyDbContext> options) : IdentityDbContext<AppUser>(options)
 {
     
     public DbSet<Cat> Cats { get; set; }
+}
+
+public class AppUser : IdentityUser
+{
+    public IEnumerable<IdentityRole>? Roles { get; set; }
 }
